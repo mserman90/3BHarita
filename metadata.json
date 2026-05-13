@@ -1,0 +1,6 @@
+{
+  "name": "Map3D",
+  "description": "CartesianCS Map3D - cloned from https://github.com/cartesiancs/map3d",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
