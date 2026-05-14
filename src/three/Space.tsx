@@ -325,17 +325,28 @@ function Roads({ area }: { area: any }) {
   }
 
   useEffect(() => {
-    const south = area[1].lat;
-    const west = area[1].lng;
-    const north = area[0].lat;
-    const east = area[0].lng;
+    const south = Math.min(area[0].lat, area[1].lat);
+    const west = Math.min(area[0].lng, area[1].lng);
+    const north = Math.max(area[0].lat, area[1].lat);
+    const east = Math.max(area[0].lng, area[1].lng);
     const query = `[out:json][timeout:25];(way["highway"](${south},${west},${north},${east}););out body geom;`;
     fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
-      body: query,
+      body: "data=" + encodeURIComponent(query),
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     })
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Overpass API error: ${response.status} ${errText}`);
+        }
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          throw new Error(`Overpass API returned non-JSON: ${text}`);
+        }
+      })
       .then((data) => {
         setRoads(data.elements);
       })
@@ -356,6 +367,7 @@ function Roads({ area }: { area: any }) {
 
         return (
           <Line
+            key={index}
             points={points}
             color="#34f516"
             lineWidth={1}

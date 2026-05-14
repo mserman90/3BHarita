@@ -124,18 +124,28 @@ function App() {
   const requestBuildings = async () => {
     setIsFetchingBuildings(true);
 
-    const south = areaData[1].lat;
-    const west = areaData[1].lng;
-    const north = areaData[0].lat;
-    const east = areaData[0].lng;
+    const south = Math.min(areaData[0].lat, areaData[1].lat);
+    const west = Math.min(areaData[0].lng, areaData[1].lng);
+    const north = Math.max(areaData[0].lat, areaData[1].lat);
+    const east = Math.max(areaData[0].lng, areaData[1].lng);
     const query = `[out:json][timeout:25];(way["building"]( ${south},${west},${north},${east} );relation["building"]( ${south},${west},${north},${east} ););out body geom;`;
     try {
       const response = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
-        body: query,
+        body: "data=" + encodeURIComponent(query),
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
-      const data = await response.json();
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Overpass API error: ${response.status} ${errText}`);
+      }
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch(e) {
+        throw new Error(`Overpass API returned non-JSON: ${text}`);
+      }
       const blds: Building[] = data.elements.map((element) => ({
         id: element.id,
         tags: element.tags,

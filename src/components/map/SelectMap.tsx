@@ -4,6 +4,7 @@ import {
   Rectangle,
   TileLayer,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import L, { LatLng, LatLngBounds } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -14,6 +15,16 @@ const IconSize = css({
   width: "14px",
   height: "14px",
 });
+
+function MapController({ targetCenter }: { targetCenter: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (targetCenter) {
+      map.flyTo(targetCenter, 14);
+    }
+  }, [targetCenter, map]);
+  return null;
+}
 
 function RectangleSelector({
   isDrag = true,
@@ -124,12 +135,33 @@ export function MapComponent({
   onDone,
   onRemove,
 }: {
-  onDone: (e) => void;
+  onDone: (e: any) => void;
   onRemove: () => void;
 }) {
   const [isDrag, setIsDrag] = useState(true);
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
   const [drawBounds, setDrawBounds] = useState<LatLngBounds | null>(null);
+  const [targetCenter, setTargetCenter] = useState<[number, number] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery) return;
+    setIsSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        setTargetCenter([Number(data[0].lat), Number(data[0].lon)]);
+      } else {
+        alert("Konum bulunamadı.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setIsSearching(false);
+  };
 
   const handleClickSwitchDrag = () => {
     setIsDrag(!isDrag);
@@ -147,7 +179,7 @@ export function MapComponent({
     onDone([e._northEast, e._southWest]);
   };
 
-  const handleChangeDraw = (e) => {
+  const handleChangeDraw = (e: any) => {
     setDrawBounds(e);
     onDone([e._northEast, e._southWest]);
   };
@@ -158,6 +190,59 @@ export function MapComponent({
         position: "relative",
       })}
     >
+      <div
+        css={css({
+          position: "absolute",
+          zIndex: 9999,
+          left: "3.5rem",
+          top: "1rem",
+        })}
+      >
+        <form 
+          onSubmit={handleSearch} 
+          css={css({
+            display: "flex",
+            gap: "0.5rem",
+            alignItems: "center",
+            backgroundColor: "#ffffff",
+            padding: "0.25rem",
+            borderRadius: "8px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          })}
+        >
+          <input 
+            type="text" 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Konum ara..."
+            css={css({
+              border: "none",
+              outline: "none",
+              padding: "0.5rem",
+              borderRadius: "4px",
+              width: "200px"
+            })}
+          />
+          <button 
+            type="submit" 
+            disabled={isSearching}
+            css={css({
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              padding: "0.5rem 1rem",
+              borderRadius: "4px",
+              cursor: "pointer",
+              ":disabled": {
+                backgroundColor: "#ccc"
+              }
+            })}
+          >
+            {isSearching ? "Aranıyor..." : "Git"}
+          </button>
+        </form>
+      </div>
+
       <div
         css={css({
           position: "absolute",
@@ -232,6 +317,7 @@ export function MapComponent({
           attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapController targetCenter={targetCenter} />
         <RectangleSelector
           bounds={bounds}
           drawBounds={drawBounds}
