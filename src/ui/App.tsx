@@ -195,6 +195,37 @@ function App() {
     <div css={css({ height: "100%", width: "100%" })}>
       <TopNav step={step} />
 
+      {isFetchingBuildings && (
+        <div
+          css={css({
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(4px)",
+            zIndex: 99999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          })}
+        >
+          <Loader2
+            css={css({
+              width: "48px",
+              height: "48px",
+              color: "#007bff",
+              animation: `${spinAnimation} 1s linear infinite`,
+              marginBottom: "1rem",
+            })}
+          />
+          <h2 css={css({ fontSize: "1.5rem", fontWeight: "600", color: "#333", marginBottom: "0.5rem" })}>Building 3D World</h2>
+          <p css={css({ fontSize: "1rem", color: "#666" })}>Fetching building data and generating 3D models...</p>
+        </div>
+      )}
+
       <FullscreenModal isOpen={steps[step] == "front"}>
         <Column gap="1rem">
           <Column gap="0.5rem">
