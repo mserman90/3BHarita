@@ -174,14 +174,14 @@ export function MapComponent({
     setIsDrag(true);
   };
 
-  const handleChangeDone = (e) => {
+  const handleChangeDone = (e: any) => {
     setBounds(e);
-    onDone([e._northEast, e._southWest]);
+    onDone([e.getNorthEast(), e.getSouthWest()]);
   };
 
   const handleChangeDraw = (e: any) => {
     setDrawBounds(e);
-    onDone([e._northEast, e._southWest]);
+    onDone([e.getNorthEast(), e.getSouthWest()]);
   };
 
   return (

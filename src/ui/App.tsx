@@ -146,7 +146,10 @@ function App() {
       } catch(e) {
         throw new Error(`Overpass API returned non-JSON: ${text}`);
       }
-      const blds: Building[] = data.elements.map((element) => ({
+      if (!data || !data.elements) {
+        throw new Error(`Overpass API returned unexpected data structure (missing elements). Output: ${text.substring(0, 50)}`);
+      }
+      const blds: Building[] = data.elements.map((element: any) => ({
         id: element.id,
         tags: element.tags,
         geometry: element.geometry
@@ -156,8 +159,9 @@ function App() {
       setBuildings(blds);
       appendAreas(blds);
       setHasFetchedBuildings(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching building data:", error);
+      alert(`Error fetching building data: ${error.message}`);
     } finally {
       setIsFetchingBuildings(false);
     }

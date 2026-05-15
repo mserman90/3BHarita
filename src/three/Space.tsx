@@ -348,7 +348,11 @@ function Roads({ area }: { area: any }) {
         }
       })
       .then((data) => {
-        setRoads(data.elements);
+        if (data && data.elements) {
+          setRoads(data.elements);
+        } else {
+          console.error("Overpass returned unexpected data for roads", data);
+        }
       })
       .catch((err) => console.error(err));
   }, [area]);
