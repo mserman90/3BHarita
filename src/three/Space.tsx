@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Canvas, extend, ReactThreeFiber, useThree } from "@react-three/fiber";
 import { useAreaStore } from "@/state/areaStore";
 import { Html, Sky, Environment, Line } from "@react-three/drei";
@@ -9,6 +9,39 @@ import Car from "./Car";
 import instanceFleet from "@/api/axios";
 
 const scale = 51000;
+
+function useBuildingTexture() {
+  return useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.fillStyle = "#e0e4e8"; // Building wall color
+      context.fillRect(0, 0, 256, 256);
+      
+      const padding = 12;
+      const windowWidth = 24;
+      const windowHeight = 40;
+      
+      for (let x = padding; x < 256; x += windowWidth + padding) {
+        for (let y = padding; y < 256; y += windowHeight + padding) {
+          if (Math.random() > 0.7) {
+            context.fillStyle = "#fffae6"; // Lit window
+            context.fillRect(x, y, windowWidth, windowHeight);
+          } else {
+            context.fillStyle = "#3a4a5a"; // Dark window
+            context.fillRect(x, y, windowWidth, windowHeight);
+          }
+        }
+      }
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }, []);
+}
 
 function Building({
   shape,
@@ -24,6 +57,24 @@ function Building({
   const [hoverPos, setHoverPos] = useState<THREE.Vector3 | null>(null);
   const [showTranslations, setShowTranslations] = useState(false);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
+
+  const baseTexture = useBuildingTexture();
+  const perimeter = useMemo(() => {
+    const points = shape.getPoints();
+    let p = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+      p += points[i].distanceTo(points[i + 1]);
+    }
+    return p;
+  }, [shape]);
+
+  const texture = useMemo(() => {
+    const tex = baseTexture.clone();
+    tex.needsUpdate = true;
+    tex.repeat.set(Math.max(1, Math.round(perimeter / 6)), Math.max(1, Math.round(extrudeSettings.depth / 4)));
+    return tex;
+  }, [baseTexture, perimeter, extrudeSettings.depth]);
+
   return (
     <mesh
       onPointerOver={(e) => {
@@ -46,7 +97,8 @@ function Building({
       userData={{ exportToGLB: true }}
     >
       <extrudeGeometry args={[shape, extrudeSettings]} />
-      <meshStandardMaterial color={hovered || clicked ? "#007bff" : "#9da0a3"} />
+      <meshStandardMaterial attach="material-0" color={hovered || clicked ? "#007bff" : "#a0a4a8"} />
+      <meshStandardMaterial attach="material-1" color={hovered || clicked ? "#007bff" : "#ffffff"} map={texture} />
       {(hovered || clicked) && hoverPos && (
         <Html position={[hoverPos.x, hoverPos.y + extrudeSettings.depth + 0.5, hoverPos.z]} center>
           <div

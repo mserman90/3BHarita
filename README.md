@@ -23,7 +23,7 @@ The map files are based on OpenStreetMap data.
 - [x] Create 3D Buildings
 - [x] Create Roads
 - [x] Export GLB
-- [ ] Building Texture
+- [x] Building Texture
 - [ ] Height Customization
 - [ ] Material
 - [ ] Heightmap
